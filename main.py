@@ -8,11 +8,13 @@ from usearch.index import Index, MetricKind
 
 # Managing data
 
-data_path = os.environ.get('UNSPLASH_SEARCH_PATH')
+data_path: str = os.environ.get('UNSPLASH_SEARCH_PATH')
+view_local_images: bool = True if os.environ.get(
+    'STREAMLIT_SERVER_ENABLE_STATIC_SERVING') else False
 
 
 @st.cache_resource
-def get_unum_model():
+def get_uform_model():
     return get_model('unum-cloud/uform-vl-english')
 
 
@@ -20,11 +22,14 @@ def get_unum_model():
 def get_unsplash_metadata():
     path = os.path.join(data_path, 'images.csv')
     assert os.path.exists(path), 'Missing metadata file'
-    return pd.read_csv(path, dtype=str).fillna('')
+    df = pd.read_csv(path, dtype=str).fillna('')
+    df['photo_submitted_at'] = pd.to_datetime(
+        df['photo_submitted_at'], format='mixed')
+    return df
 
 
 @st.cache_resource
-def get_unsplash_index():
+def get_unsplash_usearch_index():
     index = Index(ndim=256, metric=MetricKind.Cos)
     path = os.path.join(data_path, 'images.usearch')
     assert os.path.exists(path), 'Missing index file'
@@ -42,68 +47,122 @@ st.set_page_config(
 
 st.title('USearch through Unsplash')
 
-slot_search_bar, _, slot_uform_ai, slot_captions = st.columns((16, 1, 2, 2))
+slot_search_bar, _, slot_layout, slot_uform_ai, slot_captions = st.columns(
+    (16, 1, 2, 2, 2))
 
 with slot_search_bar:
-    query = st.text_input(
+    query: str = st.text_input(
         'Search Bar',
         placeholder='Search for Unsplash photos',
-        value='', key='query', label_visibility='collapsed')
+        value='', key='query',
+        label_visibility='collapsed')
 
 with slot_uform_ai:
-    use_ai = st.checkbox('UForm AI', value=True)
+    use_ai: bool = st.checkbox('UForm AI', value=True)
 
 with slot_captions:
-    show_captions = st.checkbox('Captions', value=True)
+    show_captions: bool = st.checkbox('Captions', value=True)
 
-columns = st.sidebar.slider('Grid Columns', min_value=1, max_value=10, value=3)
+with slot_layout:
+    layout: str = st.radio(
+        'Layout',
+        ('List', 'Grid'),
+        horizontal=True,
+        label_visibility='collapsed')
 
+columns: int = st.sidebar.slider(
+    'Grid Columns', min_value=1, max_value=10, value=3)
+max_results: int = st.sidebar.number_input(
+    'Max Matches', min_value=1, max_value=None, value=100)
+
+model = get_uform_model()
 table = get_unsplash_metadata()
-model = get_unum_model()
-index = get_unsplash_index()
+index = get_unsplash_usearch_index()
+
 results = []
 max_caption_length = 100
-max_results = columns * 20
 
 # Search Content
 
 if not len(query):
     results = table[:max_results]
 
-elif use_ai:
-    query_data = model.preprocess_text(query)
-    query_embedding = model.encode_text(query_data).detach().numpy()
-    matches, _, _ = index.search(query_embedding.flatten(), max_results)
-    results = table.iloc[matches]
-
 else:
-    results = table[table['photo_description'].str.contains(
-        query)][:max_results]
+    with st.spinner(f'We are searching through {len(table)} entries'):
+
+        if use_ai:
+            query_data = model.preprocess_text(query)
+            query_embedding = model.encode_text(query_data).detach().numpy()
+            matches, _, _ = index.search(
+                query_embedding.flatten(), max_results)
+            results = table.iloc[matches]
+
+        else:
+            results = table[table['photo_description'].str.contains(
+                query)][:max_results]
+
+    st.success(f'Found {len(results)} results!', icon='✅')
+
 
 # Visualize Matches
 
-for n_row, row in results.reset_index().iterrows():
-    i = n_row % columns
-    if i == 0:
-        st.write('---')
-        cols = st.columns(columns, gap='large')
+if layout == 'List':
+    columns = [
+        'photo_id',
+        'photo_url',
+        'photo_image_url',
+        'photo_description',
+        'ai_description',
+        'photographer_username',
+        'photo_submitted_at',
+        'stats_views',
+        'stats_downloads',
+    ]
+    visible_results = results[columns]
 
-    with cols[n_row % columns]:
-        id = row['photo_id']
-        username = row['photographer_username'].strip()
+    st.data_editor(
+        visible_results,
+        column_config={
+            'photo_id': st.column_config.TextColumn('ID'),
+            'photo_url': st.column_config.LinkColumn('Preview'),
+            'photo_image_url': st.column_config.ImageColumn('Preview'),
+            'photo_submitted_at': st.column_config.DatetimeColumn(
+                'Time',
+                format='DD.MM.YYYY',
+            ),
+            'photo_description': st.column_config.TextColumn('Human Text'),
+            'ai_description': st.column_config.TextColumn('AI Text'),
+            'photographer_username': st.column_config.TextColumn('Author'),
+            'stats_views': st.column_config.NumberColumn('Views'),
+            'stats_downloads': st.column_config.NumberColumn('Downloads'),
+        },
+        use_container_width=True,
+        disabled=True,
+        hide_index=False,
+    )
+else:
+    for n_row, row in results.reset_index().iterrows():
+        i = n_row % columns
+        if i == 0:
+            st.write('---')
+            cols = st.columns(columns, gap='large')
 
-        web_page = row['photo_url']
-        preview_path = os.path.join(data_path, 'images', id + '.jpg')
-        preview_url = row['photo_image_url']
+        with cols[n_row % columns]:
+            id = row['photo_id']
+            username = row['photographer_username'].strip()
 
-        if show_captions:
-            description = row['photo_description'].strip()
-            if len(description) > max_caption_length:
-                description = description[:max_caption_length] + '...'
-            description = f'{description} \@{username}'
-        else:
-            description = ''
-        st.image(
-            preview_path,
-            caption=description,
-            use_column_width='always')
+            web_page = row['photo_url']
+            preview_path = os.path.join(data_path, 'images', id + '.jpg')
+            preview_url = row['photo_image_url']
+
+            if show_captions:
+                description = row['photo_description'].strip()
+                if len(description) > max_caption_length:
+                    description = description[:max_caption_length] + '...'
+                description = f'{description} \@{username}'
+            else:
+                description = ''
+            st.image(
+                preview_path,
+                caption=description,
+                use_column_width='always')

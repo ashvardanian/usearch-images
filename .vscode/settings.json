@@ -9,6 +9,7 @@
         "iloc",
         "iterrows",
         "ndim",
+        "STREAMLIT",
         "uform",
         "usearch"
     ]
