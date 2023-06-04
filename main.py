@@ -8,7 +8,11 @@ from usearch.index import Index, MetricKind
 
 # Managing data
 
-data_path: str = os.environ.get('UNSPLASH_SEARCH_PATH')
+script_path: str = os.path.dirname(os.path.abspath(__file__))
+
+data_path: str = os.environ.get(
+    'UNSPLASH_SEARCH_PATH', os.path.join(script_path, 'dataset'))
+
 view_local_images: bool = True if os.environ.get(
     'STREAMLIT_SERVER_ENABLE_STATIC_SERVING') else False
 
@@ -104,13 +108,20 @@ else:
     st.success(f'Found {len(results)} results!', icon='✅')
 
 
-# Visualize Matches
+# Join metadata with images
+results = results.copy().reset_index()
+results['photo_image_path'] = [
+    os.path.join(data_path, 'images', id + '.jpg')
+    for id in results['photo_id']]
 
+# Visualize Matches
 if layout == 'List':
+
     columns = [
         'photo_id',
         'photo_url',
         'photo_image_url',
+        'photo_image_path',
         'photo_description',
         'ai_description',
         'photographer_username',
@@ -124,8 +135,13 @@ if layout == 'List':
         visible_results,
         column_config={
             'photo_id': st.column_config.TextColumn('ID'),
-            'photo_url': st.column_config.LinkColumn('Preview'),
-            'photo_image_url': st.column_config.ImageColumn('Preview'),
+            'photo_url': st.column_config.LinkColumn('Page'),
+            'photo_image_url': st.column_config.ImageColumn(
+                'Remote',
+                width='medium'),
+            'photo_image_path': st.column_config.ImageColumn(
+                'Local',
+                width='medium'),
             'photo_submitted_at': st.column_config.DatetimeColumn(
                 'Time',
                 format='DD.MM.YYYY',
@@ -150,10 +166,7 @@ else:
         with cols[n_row % columns]:
             id = row['photo_id']
             username = row['photographer_username'].strip()
-
-            web_page = row['photo_url']
-            preview_path = os.path.join(data_path, 'images', id + '.jpg')
-            preview_url = row['photo_image_url']
+            preview_path = row['photo_image_path']
 
             if show_captions:
                 description = row['photo_description'].strip()

@@ -12,3 +12,6 @@ build/
 
 # Backup files
 *~.nib
+
+# Dataset
+dataset
