@@ -1,3 +1,5 @@
 uform
 usearch
+
+pandas
 streamlit

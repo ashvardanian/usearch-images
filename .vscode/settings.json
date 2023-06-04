@@ -9,6 +9,7 @@
         "iloc",
         "iterrows",
         "ndim",
+        "uform",
         "usearch"
     ]
 }
