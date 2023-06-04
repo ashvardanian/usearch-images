@@ -1,0 +1,2 @@
+*.usearch filter=lfs diff=lfs merge=lfs -text
+*.mlmodel filter=lfs diff=lfs merge=lfs -text

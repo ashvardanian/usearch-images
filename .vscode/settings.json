@@ -1,0 +1,14 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none",
+    "cSpell.words": [
+        "dtype",
+        "fillna",
+        "iloc",
+        "iterrows",
+        "ndim",
+        "usearch"
+    ]
+}
