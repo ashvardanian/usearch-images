@@ -55,7 +55,7 @@ dataset_name: int = st.sidebar.selectbox(
 with st.spinner(f'We are searching through {size} entries'):
 
     if image_query:
-        image_query = pil.Image.open(image_query).resize((256, 256))
+        image_query = pil.Image.open(image_query).resize((224, 224))
         results = client.find_with_image(
             query=image_query, count=max_results).json
     else:

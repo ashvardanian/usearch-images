@@ -19,7 +19,7 @@ uris = open('images.txt', 'r').read().splitlines()
 
 def find_vector(vector: np.ndarray, count: int = 10) -> List[str]:
     vector = vector.flatten()
-    assert len(vector) == ndim, f'Wrong number of dimensions in query matrix!'
+    assert len(vector) == ndim, 'Wrong number of dimensions in query matrix!'
     matches: Matches = index.search(vector, count)
     ids: np.ndarray = matches.labels.flatten()
     return [uris[id] for id in ids]
