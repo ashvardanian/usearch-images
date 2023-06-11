@@ -93,7 +93,7 @@ image_query: io.BytesIO = st.file_uploader(
 
 layout: str = st.radio(
     'Layout',
-    ('List', 'Grid', 'Semantics'),
+    ('Grid', 'List', 'Semantics'),
     horizontal=True,
     label_visibility='collapsed')
 
@@ -189,10 +189,7 @@ if layout == 'List':
 
 elif layout == 'Semantics':
 
-    vectors = np.vstack([
-        index.reconstruct(id, dtype=np.float32)
-        for id in results['photo_id']])
-
+    vectors = np.vstack([index[id] for id in results['photo_id']])
     tsne = skl.manifold.TSNE(
         n_components=2, learning_rate='auto',
         init='random', perplexity=3).fit_transform(vectors)

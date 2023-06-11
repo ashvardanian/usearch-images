@@ -1,5 +1,9 @@
 uform
 usearch
+ucall
+ukv
 
-pandas
 streamlit
+pandas
+sklearn
+altair

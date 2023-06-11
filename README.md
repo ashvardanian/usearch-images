@@ -16,7 +16,7 @@ To visualize the unsplash dataset, download it from HuggingFace and link it unde
 
 ```sh
 wget -O dataset/.csv https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.csv
+wget -O dataset/.fbin https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.fbin
 wget -O dataset/.usearch https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.usearch
-wget -O dataset/tmp.zip https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.zip
-unzip dataset/tmp.zip
+wget -O dataset/.zip https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.zip
 ```
