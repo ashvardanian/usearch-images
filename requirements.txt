@@ -1,10 +1,3 @@
-uform
-usearch
 ucall
-# ukv
-
 streamlit
 numpy
-pandas
-scikit-learn
-altair

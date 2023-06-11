@@ -6,8 +6,6 @@ import mimetypes
 import numpy as np
 import streamlit as st
 import pandas as pd
-import altair as alt
-import sklearn as skl
 import PIL as pil
 
 from uform import get_model
@@ -200,6 +198,9 @@ def draw_gui():
         )
 
     elif layout == 'Semantics':
+
+        import altair as alt
+        import sklearn as skl
 
         vectors = np.vstack([index[id] for id in results['photo_id']])
         tsne = skl.manifold.TSNE(

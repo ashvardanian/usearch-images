@@ -1,4 +1,6 @@
 .streamlit
+images.*
+texts.*
 
 # Mac OS X
 *.DS_Store

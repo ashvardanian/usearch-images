@@ -15,8 +15,7 @@ export STREAMLIT_SERVER_ENABLE_STATIC_SERVING=1
 To visualize the unsplash dataset, download it from HuggingFace and link it under the `dataset/` path.
 
 ```sh
-wget -O dataset/.csv https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.csv
-wget -O dataset/.fbin https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.fbin
-wget -O dataset/.usearch https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.usearch
-wget -O dataset/.zip https://huggingface.co/datasets/unum-cloud/unsplash-search/resolve/main/images.zip
+wget -O images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.txt
+wget -O images.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.fbin
+wget -O images.usearch https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.usearch
 ```
