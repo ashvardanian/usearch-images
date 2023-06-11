@@ -1,9 +1,10 @@
 uform
 usearch
 ucall
-ukv
+# ukv
 
 streamlit
+numpy
 pandas
-sklearn
+scikit-learn
 altair

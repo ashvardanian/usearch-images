@@ -1,3 +1,5 @@
+.streamlit
+
 # Mac OS X
 *.DS_Store
 
@@ -5,7 +7,7 @@
 *.o
 *.pyc
 
-#Python modules
+# Python modules
 MANIFEST
 dist/
 build/
