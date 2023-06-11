@@ -1,7 +1,7 @@
 #  Semantic Gallery with StreamLit
 
 ```sh
-streamlit run main.py
+streamlit run streamlit_app.py
 ```
 
 To serve previews from the local dataset copy, please enable [static file serving](https://docs.streamlit.io/library/advanced-features/static-file-serving):
