@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from PIL.Image import Image
 
-from ucall.posix import Server
+from ucall.rich_posix import Server
 from usearch.index import Index, MetricKind, Matches
 from usearch.io import load_matrix
 from usearch.server import _ascii_to_vector
@@ -18,7 +18,8 @@ uris = open('images.txt', 'r').read().splitlines()
 
 
 def find_vector(vector: np.ndarray, count: int = 10) -> List[str]:
-    assert len(vector) == ndim, 'Wrong number of dimensions in query matrix'
+    vector = vector.flatten()
+    assert len(vector) == ndim, f'Wrong number of dimensions in query matrix!'
     matches: Matches = index.search(vector, count)
     ids: np.ndarray = matches.labels.flatten()
     return [uris[id] for id in ids]
@@ -37,7 +38,7 @@ def find_with_vector(query: str, count: int) -> List[str]:
 def find_with_text(query: str, count: int) -> List[str]:
     """For the given `query` string returns the URIs of the most similar images"""
     text_data = model.preprocess_text(query)
-    text_embedding = model.encode_text(text_data)
+    text_embedding = model.encode_text(text_data).detach().numpy()
     return find_vector(text_embedding, count)
 
 
@@ -45,8 +46,20 @@ def find_with_text(query: str, count: int) -> List[str]:
 def find_with_image(query: Image, count: int) -> List[str]:
     """For the given `query` image returns the URIs of the most similar images"""
     image_data = model.preprocess_image(query)
-    image_embedding = model.encode_image(image_data)
+    image_embedding = model.encode_image(image_data).detach().numpy()
     return find_vector(image_embedding, count)
+
+
+@server
+def size() -> int:
+    """Number of entries in the index"""
+    return len(index)
+
+
+@server
+def dimensions() -> int:
+    """Number of dimensions in vectors"""
+    return ndim
 
 
 server.run()
