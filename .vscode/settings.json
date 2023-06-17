@@ -12,17 +12,5 @@
         "STREAMLIT",
         "uform",
         "usearch"
-    ],
-    "terminal.integrated.profiles.linux": {
-        "tmux": {
-            "path": "/usr/bin/tmux",
-            "args": [
-                "new-session",
-                "-A",
-                "-s",
-                "main"
-            ]
-        }
-    },
-    "terminal.integrated.defaultProfile.linux": "tmux"
+    ]
 }

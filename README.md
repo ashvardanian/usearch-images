@@ -32,9 +32,9 @@ sh download.sh unsplash25k
 Or just directly with `wget`:
 
 ```sh
-wget -O images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.txt
-wget -O images.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.fbin
-wget -O images.usearch https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.usearch
+wget -O datasets/unsplash25k/images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.txt
+wget -O datasets/unsplash25k/images.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.fbin
+wget -O datasets/unsplash25k/images.usearch https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.usearch
 ```
 
 ### CC 3M
