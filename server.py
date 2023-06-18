@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from PIL.Image import Image
+from tqdm import tqdm
 
 from ucall.rich_posix import Server
 from usearch.index import Index, MetricKind, Matches
@@ -20,14 +21,30 @@ class Dataset:
 
 
 def open_dataset(dir: os.PathLike) -> Dataset:
+    print(f"Loading dataset: {dir}")
     vectors = load_matrix(os.path.join(dir, "images.fbin"), view=True)
+    count = vectors.shape[0]
     ndim = vectors.shape[1]
+    print(f"Loaded {count}x {ndim}-dimensional vectors")
     index = Index(
         ndim=ndim,
         metric=MetricKind.Cos,
-        path=os.path.join(dir, "images.usearch"),
     )
+    index.load(os.path.join(dir, "images.usearch"))
+
+    if len(index) == 0:
+        print("Will reconstruct the index!")
+        batch_size = 1024
+        labels = np.arange(count)
+        for i in tqdm(range(0, count, batch_size)):
+            index.add(labels[i : i + batch_size], vectors[i : i + batch_size])
+        index.save(os.path.join(dir, "images.usearch"))
+
+    print(f"Loaded index for {len(index)}x {index.ndim}-dimensional vectors")
+    assert count == len(index), "Number of vectors doesn't match"
+    assert ndim == index.ndim, "Number of dimensions doesn't match"
     uris = open(os.path.join(dir, "images.txt"), "r").read().splitlines()
+    print(f"Loaded {len(uris)}x links")
 
     return Dataset(
         index=index,
@@ -37,7 +54,10 @@ def open_dataset(dir: os.PathLike) -> Dataset:
 
 
 model = get_model("unum-cloud/uform-vl-multilingual")
-datasets = {name: open_dataset(name) for name in ("unsplash25k", "cc3m")}
+datasets = {
+    name: open_dataset(os.path.join("datasets", name))
+    for name in ("unsplash25k", "cc3m")
+}
 server = Server()
 
 
