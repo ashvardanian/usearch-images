@@ -9,7 +9,7 @@ then
     wget -c -O datasets/$1/images_part1.txt https://huggingface.co/datasets/unum-cloud/gallery-$1/resolve/main/images_part1.txt
     wget -c -O datasets/$1/images_part2.txt https://huggingface.co/datasets/unum-cloud/gallery-$1/resolve/main/images_part2.txt
     wget -c -O datasets/$1/images_part3.txt https://huggingface.co/datasets/unum-cloud/gallery-$1/resolve/main/images_part3.txt
-    cat datasets/$1/images_part*.txt >> datasets/$1/images.txt && rm datasets/$1/images_part*.txt
+    cat datasets/$1/images_part1.txt datasets/$1/images_part2.txt datasets/$1/images_part3.txt > datasets/$1/images.txt && rm datasets/$1/images_part*.txt
     wget -c -O datasets/$1/texts.fbin https://huggingface.co/datasets/unum-cloud/gallery-$1/resolve/main/texts.fbin
     wget -c -O datasets/$1/texts.usearch https://huggingface.co/datasets/unum-cloud/gallery-$1/resolve/main/texts.usearch
 else
