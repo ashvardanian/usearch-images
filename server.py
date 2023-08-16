@@ -20,17 +20,20 @@ class Dataset:
     vectors: np.ndarray
 
 
-def open_dataset(dir: os.PathLike) -> Dataset:
+def _open_dataset(dir: os.PathLike) -> Dataset:
     print(f"Loading dataset: {dir}")
-    vectors = load_matrix(os.path.join(dir, "images.fbin"), view=True)
+    vectors = load_matrix(
+        os.path.join(dir, "images.uform-vl-multilingual-v2.fbin"),
+        view=True,
+    )
     count = vectors.shape[0]
     ndim = vectors.shape[1]
     print(f"Loaded {count}x {ndim}-dimensional vectors")
     index = Index(
         ndim=ndim,
         metric=MetricKind.Cos,
+        path=os.path.join(dir, "images.uform-vl-multilingual-v2.usearch"),
     )
-    index.load(os.path.join(dir, "images.usearch"))
 
     if len(index) == 0:
         print("Will reconstruct the index!")
@@ -38,7 +41,7 @@ def open_dataset(dir: os.PathLike) -> Dataset:
         labels = np.arange(count)
         for i in tqdm(range(0, count, batch_size)):
             index.add(labels[i : i + batch_size], vectors[i : i + batch_size])
-        index.save(os.path.join(dir, "images.usearch"))
+        index.save()
 
     print(f"Loaded index for {len(index)}x {index.ndim}-dimensional vectors")
     assert count == len(index), "Number of vectors doesn't match"
@@ -53,55 +56,64 @@ def open_dataset(dir: os.PathLike) -> Dataset:
     )
 
 
-model = get_model("unum-cloud/uform-vl-multilingual")
-datasets = {
-    name: open_dataset(os.path.join("datasets", name))
-    for name in ("unsplash25k", "cc3m")
+_model = get_model("unum-cloud/uform-vl-multilingual-v2")
+_datasets = {
+    name: _open_dataset(os.path.join("data", name)) for name in ("unsplash25k",)
 }
-server = Server()
 
 
 def find_vector(dataset_name: str, vector: np.ndarray, count: int = 10) -> List[str]:
     vector = vector.flatten()
-    assert dataset_name in datasets.keys()
-    dataset = datasets[dataset_name]
+    assert dataset_name in _datasets.keys()
+    dataset = _datasets[dataset_name]
     matches: Matches = dataset.index.search(vector, count)
-    ids: np.ndarray = matches.labels.flatten()
+    ids: np.ndarray = matches.keys.flatten()
     return [dataset.uris[id] for id in ids]
 
 
-@server
+def sample_images(dataset_name: str, count: int = 10) -> List[str]:
+    dataset = _datasets[dataset_name]
+    images = list(np.random.choice(dataset.uris, count))
+    return images
+
+
 def find_with_vector(dataset: str, query: str, count: int) -> List[str]:
     """For the given `query` ASCII vector returns the URIs of the most similar images"""
     return find_vector(dataset, _ascii_to_vector(query), count)
 
 
-@server
 def find_with_text(dataset: str, query: str, count: int) -> List[str]:
     """For the given `query` string returns the URIs of the most similar images"""
-    text_data = model.preprocess_text(query)
-    text_embedding = model.encode_text(text_data).detach().numpy()
+    if query is None or len(query) == 0:
+        return sample_images(dataset, count)
+
+    text_data = _model.preprocess_text(query)
+    text_embedding = _model.encode_text(text_data).detach().numpy()
     return find_vector(dataset, text_embedding, count)
 
 
-@server
 def find_with_image(dataset: str, query: Image, count: int) -> List[str]:
     """For the given `query` image returns the URIs of the most similar images"""
-    image_data = model.preprocess_image(query)
-    image_embedding = model.encode_image(image_data).detach().numpy()
+    image_data = _model.preprocess_image(query)
+    image_embedding = _model.encode_image(image_data).detach().numpy()
     return find_vector(dataset, image_embedding, count)
 
 
-@server
 def size(dataset: str) -> int:
     """Number of entries in the index"""
-    return len(datasets[dataset].index)
+    return len(_datasets[dataset].index)
 
 
-@server
 def dimensions(dataset: str) -> int:
     """Number of dimensions in vectors"""
-    return datasets[dataset].index.ndim
+    return _datasets[dataset].index.ndim
 
 
-server.run()
+if __name__ == "__main__":
+    server = Server()
+    server(find_with_vector)
+    server(find_with_text)
+    server(find_with_image)
+    server(size)
+    server(dimensions)
+    server.run()

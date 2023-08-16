@@ -15,8 +15,8 @@ export STREAMLIT_SERVER_ENABLE_STATIC_SERVING=1
 All datasets share identical format:
 
 - `images.txt` contains newline-delimited URLs or Base64-encoded data-URIs of images.
-- `images.fbin` contains a binary matrix of [UForm][uform] embedding for every image from `images.txt`.
-- `images.usearch` contains a binary [USearch][usearch] search index for fast kANN.
+- `images.<model>.fbin` contains a binary matrix of [UForm][uform] embedding for every image from `images.txt`.
+- `images.<model>.usearch` contains a binary [USearch][usearch] search index for fast kANN.
 
 Additionally, some image-text paired datasets may provide `texts.txt`, `texts.fbin`, `texts.usearch`, following the same logic.
 
@@ -32,8 +32,9 @@ sh download.sh unsplash25k
 Or just directly with `wget`:
 
 ```sh
+mkdir -p datasets/unsplash25k
 wget -O datasets/unsplash25k/images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.txt
-wget -O datasets/unsplash25k/images.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.fbin
+wget -O datasets/unsplash25k/images.uform-vl-multilingual-v2.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.uform-vl-multilingual-v2.fbin
 wget -O datasets/unsplash25k/images.usearch https://huggingface.co/datasets/unum-cloud/gallery-unsplash25k/resolve/main/images.usearch
 ```
 
