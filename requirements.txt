@@ -1,3 +1,9 @@
+uform
+usearch
 ucall
-streamlit
+
 numpy
+pandas
+streamlit
+scikit-learn
+altair

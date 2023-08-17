@@ -1,8 +1,0 @@
-uform
-usearch
-ucall
-
-numpy
-pandas
-scikit-learn
-altair
