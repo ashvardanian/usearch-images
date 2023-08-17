@@ -37,10 +37,7 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
 
     if len(index) == 0:
         print("Will reconstruct the index!")
-        batch_size = 1024
-        labels = np.arange(count)
-        for i in tqdm(range(0, count, batch_size)):
-            index.add(labels[i : i + batch_size], vectors[i : i + batch_size])
+        index.add(None, vectors, log=True)
         index.save()
 
     print(f"Loaded index for {len(index)}x {index.ndim}-dimensional vectors")

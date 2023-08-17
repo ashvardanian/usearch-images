@@ -49,14 +49,14 @@ def get_server():
 @st.cache_resource
 def get_examples_by_language() -> Dict[str, List[str]]:
     """Load language examples from JSON."""
-    with open("examples_by_language.json") as f:
+    with open("assets/examples_by_language.json") as f:
         return json.load(f)
 
 
 @st.cache_resource
 def get_examples_vectors() -> Dict[str, np.ndarray]:
     """Load example vectors from JSON."""
-    with open("examples_vectors.json") as f:
+    with open("assets/examples_vectors.json") as f:
         return json.load(f)
 
 
