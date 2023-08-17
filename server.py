@@ -62,13 +62,13 @@ _datasets = {
 }
 
 
-def find_vector(dataset_name: str, vector: np.ndarray, count: int = 10) -> List[str]:
+def find_vector(dataset: str, vector: np.ndarray, count: int = 10) -> List[str]:
     vector = vector.flatten()
-    assert dataset_name in _datasets.keys()
-    dataset = _datasets[dataset_name]
-    matches: Matches = dataset.index.search(vector, count)
+    assert dataset in _datasets.keys()
+    dataset_object = _datasets[dataset]
+    matches: Matches = dataset_object.index.search(vector, count)
     ids: np.ndarray = matches.keys.flatten()
-    return [dataset.uris[id] for id in ids]
+    return [dataset_object.uris[id] for id in ids]
 
 
 def sample_images(dataset_name: str, count: int = 10) -> List[str]:
