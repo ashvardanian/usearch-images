@@ -1,4 +1,5 @@
 import io
+import os
 import json
 from typing import Dict, List
 
@@ -34,7 +35,7 @@ st.markdown(
 st.title("USearch Images")
 
 # Server IP address
-ip_address = st.secrets.get("SERVER_IP", None)
+ip_address = st.secrets.get("SERVER_IP", None) if os.path.exists(".streamlit/secrets.toml") else None
 
 
 @st.cache_resource
