@@ -104,7 +104,7 @@ examples_vectors = get_examples_vectors()
 st.session_state.setdefault("query", examples_by_language["🇺🇸"][0])
 text_query = st.text_input(
     "Search Bar",
-    placeholder="USearch for Images in the Unsplash dataset",
+    placeholder="USearch for Images",
     value=st.session_state["query"],
     key="text_query",
     label_visibility="collapsed",
@@ -135,7 +135,13 @@ for i, example in enumerate(examples_by_language[selected_language]):
 # UI elements for search configuration are snucked into the side bar
 columns: int = st.sidebar.slider("Grid Columns", min_value=1, max_value=10, value=8)
 max_results = st.sidebar.number_input("Max Matches", min_value=1, value=100)
-dataset_name: str = st.sidebar.selectbox("Dataset", ("unsplash25k",))
+dataset_name: str = st.sidebar.selectbox(
+    "Dataset",
+    (
+        "unsplash-25k",
+        "cc-3m",
+    ),
+)
 size = unwrap_response(client.size(dataset_name))
 
 # Perform search, showing a spinning wheel in the meantime

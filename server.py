@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 from PIL.Image import Image
-from tqdm import tqdm
 
+from stringzilla import File, Strs
 from ucall.rich_posix import Server
 from usearch.index import Index, MetricKind, Matches
 from usearch.io import load_matrix
@@ -16,7 +16,7 @@ from uform import get_model
 @dataclass
 class Dataset:
     index: Index
-    uris: list
+    uris: Strs
     vectors: np.ndarray
 
 
@@ -28,23 +28,26 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
     )
     count = vectors.shape[0]
     ndim = vectors.shape[1]
-    print(f"Loaded {count}x {ndim}-dimensional vectors")
+    print(f"Loaded {count:,}x {ndim}-dimensional vectors")
     index = Index(
         ndim=ndim,
-        metric=MetricKind.Cos,
-        path=os.path.join(dir, "images.uform-vl-multilingual-v2.usearch"),
+        metric=MetricKind.Cos
     )
+
+    index_path = os.path.join(dir, "images.uform-vl-multilingual-v2.usearch")
+    if os.path.exists(index_path):
+        index.load(index_path)
 
     if len(index) == 0:
         print("Will reconstruct the index!")
         index.add(None, vectors, log=True)
-        index.save()
+        index.save(index_path)
 
-    print(f"Loaded index for {len(index)}x {index.ndim}-dimensional vectors")
+    print(f"Loaded index for {len(index):,}x {index.ndim}-dimensional vectors")
     assert count == len(index), "Number of vectors doesn't match"
     assert ndim == index.ndim, "Number of dimensions doesn't match"
-    uris = open(os.path.join(dir, "images.txt"), "r").read().splitlines()
-    print(f"Loaded {len(uris)}x links")
+    uris: Strs = File(os.path.join(dir, "images.txt")).splitlines()
+    print(f"Loaded {len(uris):,}x links")
 
     return Dataset(
         index=index,
@@ -55,7 +58,11 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
 
 _model = get_model("unum-cloud/uform-vl-multilingual-v2")
 _datasets = {
-    name: _open_dataset(os.path.join("data", name)) for name in ("unsplash25k",)
+    name: _open_dataset(os.path.join("data", name))
+    for name in (
+        "unsplash-25k",
+        "cc-3m",
+    )
 }
 
 
@@ -65,7 +72,7 @@ def find_vector(dataset: str, vector: np.ndarray, count: int = 10) -> List[str]:
     dataset_object = _datasets[dataset]
     matches: Matches = dataset_object.index.search(vector, count)
     ids: np.ndarray = matches.keys.flatten()
-    return [dataset_object.uris[id] for id in ids]
+    return [str(dataset_object.uris[id]) for id in ids]
 
 
 def sample_images(dataset_name: str, count: int = 10) -> List[str]:

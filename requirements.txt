@@ -2,6 +2,7 @@ uform
 usearch
 ucall
 
+stringzilla
 numpy
 pandas
 streamlit
