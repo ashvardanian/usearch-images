@@ -1,9 +1,12 @@
 import os
+import re
+import io
+import base64
 from typing import List
 from dataclasses import dataclass
 
 import numpy as np
-from PIL.Image import Image
+from PIL import Image
 
 from stringzilla import File, Strs
 from ucall.rich_posix import Server
@@ -28,11 +31,8 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
     )
     count = vectors.shape[0]
     ndim = vectors.shape[1]
-    print(f"Loaded {count:,}x {ndim}-dimensional vectors")
-    index = Index(
-        ndim=ndim,
-        metric=MetricKind.Cos
-    )
+    print(f"- loaded {count:,} x {ndim}-dimensional vectors")
+    index = Index(ndim=ndim, metric=MetricKind.Cos)
 
     index_path = os.path.join(dir, "images.uform-vl-multilingual-v2.usearch")
     if os.path.exists(index_path):
@@ -43,11 +43,11 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
         index.add(None, vectors, log=True)
         index.save(index_path)
 
-    print(f"Loaded index for {len(index):,}x {index.ndim}-dimensional vectors")
+    print(f"- loaded index for {len(index):,} x {index.ndim}-dimensional vectors")
     assert count == len(index), "Number of vectors doesn't match"
     assert ndim == index.ndim, "Number of dimensions doesn't match"
     uris: Strs = File(os.path.join(dir, "images.txt")).splitlines()
-    print(f"Loaded {len(uris):,}x links")
+    print(f"- loaded {len(uris):,} links")
 
     return Dataset(
         index=index,
@@ -72,7 +72,8 @@ def find_vector(dataset: str, vector: np.ndarray, count: int = 10) -> List[str]:
     dataset_object = _datasets[dataset]
     matches: Matches = dataset_object.index.search(vector, count)
     ids: np.ndarray = matches.keys.flatten()
-    return [str(dataset_object.uris[id]) for id in ids]
+    uris: List[str] = [str(dataset_object.uris[id]) for id in ids]
+    return uris
 
 
 def sample_images(dataset_name: str, count: int = 10) -> List[str]:
@@ -86,14 +87,36 @@ def find_with_vector(dataset: str, query: str, count: int) -> List[str]:
     return find_vector(dataset, _ascii_to_vector(query), count)
 
 
-def find_with_text(dataset: str, query: str, count: int) -> List[str]:
+def find_with_text(
+    dataset: str,
+    query: str,
+    count: int,
+    rerank: bool = False,
+) -> List[str]:
     """For the given `query` string returns the URIs of the most similar images"""
     if query is None or len(query) == 0:
         return sample_images(dataset, count)
 
     text_data = _model.preprocess_text(query)
     text_embedding = _model.encode_text(text_data).detach().numpy()
-    return find_vector(dataset, text_embedding, count)
+    uris = find_vector(dataset, text_embedding, count)
+
+    if rerank:
+        reranked = []
+        for uri in uris:
+            data: str = re.sub("^data:image/.+;base64,", "", uri)
+            image = Image.open(io.BytesIO(base64.b64decode(data)))
+            image_data = _model.preprocess_image(image)
+            joint_embeddings = _model.encode_multimodal(
+                image=image_data, text=text_data
+            )
+            score = float(_model.get_matching_scores(joint_embeddings))
+            reranked.append((uri, score))
+
+        reranked = sorted(reranked, reverse=True, key=lambda x: x[1])
+        uris = [uri for uri, _ in reranked]
+
+    return uris
 
 
 def find_with_image(dataset: str, query: Image, count: int) -> List[str]:
