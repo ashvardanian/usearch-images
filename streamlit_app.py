@@ -32,29 +32,54 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Set up Google Analytics
-google_analytics = (
-    st.secrets.get("GOOGLE_ANALYTICS", None)
-    if os.path.exists(".streamlit/secrets.toml")
-    else None
-)
-if not google_analytics:
-    google_analytics = "G-71Y7G3QKXQ"
-
+# For non-square images, make sure they properly centered and cropped
 st.markdown(
     """
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id={ga}"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    <style>
+    div[data-testid="stImage"] {
+        position: relative;
+        width: 100%; /* Or whatever width you want */
+        padding-bottom: 100%; /* Makes it square */
+        overflow: hidden; /* Hides the parts of the img that are outside the div */
+    }
+    div[data-testid="stImage"] img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-    gtag('config', '{ga}');
+# Hide full-screen hover buttons on images
+st.markdown(
+    """
+    <style>
+    [data-testid="StyledFullScreenButton"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# Set up Google Analytics
+st.markdown(
+    """        
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-71Y7G3QKXQ"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-71Y7G3QKXQ');
     </script>
-    """.format(
-        ga=google_analytics
-    ),
+""",
     unsafe_allow_html=True,
 )
 
@@ -96,7 +121,7 @@ def unwrap_response(resp):
 
 
 # Initialize primary variables
-client = Client(uri=ip_address) if ip_address else get_server()
+client = Client(uri=ip_address) if ip_address is not None else get_server()
 examples_by_language = get_examples_by_language()
 examples_vectors = get_examples_vectors()
 
@@ -128,13 +153,16 @@ examples_columns = st.columns(examples_widths)
 for i, example in enumerate(examples_by_language[selected_language]):
     with examples_columns[i]:
         if st.button(
-            example, on_click=handle_click, args=(example,), use_container_width=True
+            example,
+            on_click=handle_click,
+            args=(example,),
+            use_container_width=True,
         ):
             text_query = example
 
 # UI elements for search configuration are snucked into the side bar
 columns: int = st.sidebar.slider("Grid Columns", min_value=1, max_value=10, value=8)
-max_results = st.sidebar.number_input("Max Matches", min_value=1, value=100)
+max_rows: int = st.sidebar.slider("Max Rows", min_value=1, max_value=8, value=4)
 dataset_name: str = st.sidebar.selectbox(
     "Dataset",
     (
@@ -142,6 +170,9 @@ dataset_name: str = st.sidebar.selectbox(
         "cc-3m",
     ),
 )
+rerank: bool = st.sidebar.checkbox("Rerank", value=False)
+
+max_results = max_rows * columns
 size = unwrap_response(client.size(dataset_name))
 
 # Perform search, showing a spinning wheel in the meantime
@@ -170,6 +201,7 @@ with st.spinner(f"We are searching through {size:,} entries"):
                 dataset=dataset_name,
                 query=text_query,
                 count=max_results,
+                rerank=rerank,
             )
         )
 
@@ -193,8 +225,6 @@ st.markdown(
         ucall="[![UCall stars](https://img.shields.io/github/stars/unum-cloud/ucall?style=social&label=UCall)](https://github.com/unum-cloud/ucall)",
     )
 )
-
-max_rows = 4
 
 for match_idx, match in enumerate(results[: columns * max_rows]):
     col_idx = match_idx % columns
