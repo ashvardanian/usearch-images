@@ -11,9 +11,9 @@
 To start the StreamLit demo app locally, you need to download just a couple of files:
 
 ```sh
-mkdir -p data/unsplash-25k
-wget -O data/unsplash-25k/images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash-25k/resolve/main/images.txt
-wget -O data/unsplash-25k/images.uform-vl-multilingual-v2.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash-25k/resolve/main/images.uform-vl-multilingual-v2.fbin
+mkdir -p /data/unsplash-25k
+wget -O /data/unsplash-25k/images.txt https://huggingface.co/datasets/unum-cloud/gallery-unsplash-25k/resolve/main/images.txt
+wget -O /data/unsplash-25k/images.uform-vl-multilingual-v2.fbin https://huggingface.co/datasets/unum-cloud/gallery-unsplash-25k/resolve/main/images.uform-vl-multilingual-v2.fbin
 
 pip install -r requirements.txt
 streamlit run streamlit_app.py
