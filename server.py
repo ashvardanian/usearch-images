@@ -58,7 +58,7 @@ def _open_dataset(dir: os.PathLike) -> Dataset:
 
 _model = get_model("unum-cloud/uform-vl-multilingual-v2")
 _datasets = {
-    name: _open_dataset(os.path.join("data", name))
+    name: _open_dataset(os.path.join("/data", name))
     for name in (
         "unsplash-25k",
         "cc-3m",

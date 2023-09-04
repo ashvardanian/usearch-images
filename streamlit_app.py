@@ -6,7 +6,7 @@ from typing import Dict, List
 import numpy as np
 import streamlit as st
 import PIL as pil
-from ucall.client import Client
+
 
 # Set Streamlit page configuration
 st.set_page_config(
@@ -94,8 +94,13 @@ ip_address = (
 
 
 @st.cache_resource
-def get_server():
+def get_backend():
     """Load server module locally, if no remote IP is set."""
+    if ip_address is not None:
+        from ucall.client import Client
+
+        return Client(uri=ip_address)
+
     import server
 
     return server
@@ -121,7 +126,7 @@ def unwrap_response(resp):
 
 
 # Initialize primary variables
-client = Client(uri=ip_address) if ip_address is not None else get_server()
+backend = get_backend()
 examples_by_language = get_examples_by_language()
 examples_vectors = get_examples_vectors()
 
@@ -173,14 +178,14 @@ dataset_name: str = st.sidebar.selectbox(
 rerank: bool = st.sidebar.checkbox("Rerank", value=False)
 
 max_results = max_rows * columns
-size = unwrap_response(client.size(dataset_name))
+size = unwrap_response(backend.size(dataset_name))
 
 # Perform search, showing a spinning wheel in the meantime
 with st.spinner(f"We are searching through {size:,} entries"):
     if image_query:
         image_query = pil.Image.open(image_query).resize((224, 224))
         results = unwrap_response(
-            client.find_with_image(
+            backend.find_with_image(
                 dataset=dataset_name,
                 query=image_query,
                 count=max_results,
@@ -189,7 +194,7 @@ with st.spinner(f"We are searching through {size:,} entries"):
     # Avoid AI inference if we can :)
     elif text_query in examples_vectors.keys():
         results = unwrap_response(
-            client.find_vector(
+            backend.find_vector(
                 dataset=dataset_name,
                 vector=np.array(examples_vectors[text_query]),
                 count=max_results,
@@ -197,7 +202,7 @@ with st.spinner(f"We are searching through {size:,} entries"):
         )
     else:
         results = unwrap_response(
-            client.find_with_text(
+            backend.find_with_text(
                 dataset=dataset_name,
                 query=text_query,
                 count=max_results,
@@ -213,7 +218,7 @@ st.success(
 
 st.markdown(
     """
-    This page serves as a proof-of-concept for constructing a multi-lingual, multi-modal Semantic Search system with just 50 lines of Python code. 
+    This page serves as a proof-of-concept for constructing a multi-lingual, multi-modal Semantic Search system with just 50 lines of Python code.
     The content is encoded using the {uform} multi-modal transformer model, which produces embeddings in a shared vector space for text queries and visual content.
     These embeddings are then indexed and queried via the {usearch} vector search engine.
     For client-server interaction, the stack utilizes {ucall} for remote procedure calls.
