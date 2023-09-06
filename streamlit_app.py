@@ -67,22 +67,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# Set up Google Analytics
-st.markdown(
-    """        
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-71Y7G3QKXQ"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-71Y7G3QKXQ');
-    </script>
-""",
-    unsafe_allow_html=True,
-)
-
 st.title("USearch Images")
 
 # Server IP address
@@ -130,83 +114,130 @@ backend = get_backend()
 examples_by_language = get_examples_by_language()
 examples_vectors = get_examples_vectors()
 
+# Sidebar configuration settings
+search_kind: str = st.sidebar.radio(
+    "Search Kind 👇",
+    ["text-to-image", "image-to-image"],
+    key="kind",
+)
+columns: int = st.sidebar.slider("Grid Columns", min_value=1, max_value=10, value=8)
+max_rows: int = st.sidebar.slider("Max Rows", min_value=1, max_value=8, value=3)
+rerank: bool = st.sidebar.checkbox("Rerank", value=True)
+
+## 200 lines of Python to build a multi-modal search backend using USearch, UCall, and UForm - AI models so small - they can run in the browser
+
+# Put a subtitle with GitHub links
+badge_uform = "[![UForm stars](https://img.shields.io/github/stars/unum-cloud/uform?style=social&label=UForm)](https://github.com/unum-cloud/uform)"
+badge_usearch = "[![USearch stars](https://img.shields.io/github/stars/unum-cloud/usearch?style=social&label=USearch)](https://github.com/unum-cloud/usearch)"
+badge_ucall = "[![UCall stars](https://img.shields.io/github/stars/unum-cloud/ucall?style=social&label=UCall)](https://github.com/unum-cloud/ucall)"
+st.markdown(
+    "#### Semantic Search server in 200 lines of Python using {usearch}, {ucall}, and {uform} - AI models so small - they can run in the browser".format(
+        uform=badge_uform,
+        usearch=badge_usearch,
+        ucall=badge_ucall,
+    )
+)
+
 # Primary UI elements for search input
-st.session_state.setdefault("query", examples_by_language["🇺🇸"][0])
-text_query = st.text_input(
-    "Search Bar",
-    placeholder="USearch for Images",
-    value=st.session_state["query"],
-    key="text_query",
-    label_visibility="collapsed",
-)
-image_query = st.file_uploader("Alternatively, choose an image file")
-selected_language = st.radio(
-    "Or one of the examples",
-    list(examples_by_language.keys()),
-    horizontal=True,
-)
+if search_kind == "text-to-image":
+    st.session_state.setdefault("query", examples_by_language["🇺🇸"][0])
+    text_query = st.text_input(
+        "Type your query",
+        placeholder="USearch for Images",
+        value=st.session_state["query"],
+        key="text_query",
+        label_visibility="collapsed",
+    )
+    selected_language = st.radio(
+        "Or choose one of the examples in different languages",
+        list(examples_by_language.keys()),
+        horizontal=True,
+    )
+    image_query = None
 
+    # Render examples in a horizontal order:
+    def handle_click(label):
+        """Update session state with selected example."""
+        st.session_state.query = label
 
-def handle_click(label):
-    """Update session state with selected example."""
-    st.session_state.query = label
+    examples_widths = [len(x) for x in examples_by_language[selected_language]]
+    examples_columns = st.columns(examples_widths)
 
+    for i, example in enumerate(examples_by_language[selected_language]):
+        with examples_columns[i]:
+            if st.button(
+                example,
+                on_click=handle_click,
+                args=(example,),
+                use_container_width=True,
+            ):
+                text_query = example
+else:
+    text_query = None
+    image_query = st.file_uploader("Upload an image")
 
-examples_widths = [len(x) for x in examples_by_language[selected_language]]
-examples_columns = st.columns(examples_widths)
-
-for i, example in enumerate(examples_by_language[selected_language]):
-    with examples_columns[i]:
-        if st.button(
-            example,
-            on_click=handle_click,
-            args=(example,),
-            use_container_width=True,
-        ):
-            text_query = example
 
 # UI elements for search configuration are snucked into the side bar
-columns: int = st.sidebar.slider("Grid Columns", min_value=1, max_value=10, value=8)
-max_rows: int = st.sidebar.slider("Max Rows", min_value=1, max_value=8, value=4)
-dataset_name: str = st.sidebar.selectbox(
-    "Dataset",
-    (
-        "unsplash-25k",
-        "cc-3m",
-    ),
+dataset_unsplash_name = "Unsplash: 25 Thousand high-quality images"
+dataset_cc_name = "Conceptual Captions: 3 Million low-quality images"
+dataset_laion_name = "LAION Aesthetics: 4 Million best images"
+dataset_names: str = st.multiselect(
+    "Datasets",
+    [
+        dataset_unsplash_name,
+        dataset_cc_name,
+        # dataset_laion_name,
+    ],
+    [dataset_unsplash_name, dataset_cc_name],
+    format_func=lambda x: x.split(":")[0],
 )
-rerank: bool = st.sidebar.checkbox("Rerank", value=False)
+
+include_unsplash = dataset_unsplash_name in dataset_names
+include_cc = dataset_cc_name in dataset_names
+include_laion = dataset_laion_name in dataset_names
 
 max_results = max_rows * columns
-size = unwrap_response(backend.size(dataset_name))
+size = unwrap_response(
+    backend.size(
+        include_unsplash=include_unsplash,
+        include_cc=include_cc,
+        include_laion=include_laion,
+    )
+)
 
 # Perform search, showing a spinning wheel in the meantime
 with st.spinner(f"We are searching through {size:,} entries"):
-    if image_query:
+    if image_query is not None:
         image_query = pil.Image.open(image_query).resize((224, 224))
         results = unwrap_response(
             backend.find_with_image(
-                dataset=dataset_name,
                 query=image_query,
                 count=max_results,
+                include_unsplash=include_unsplash,
+                include_cc=include_cc,
+                include_laion=include_laion,
             )
         )
     # Avoid AI inference if we can :)
     elif text_query in examples_vectors.keys():
         results = unwrap_response(
             backend.find_vector(
-                dataset=dataset_name,
                 vector=np.array(examples_vectors[text_query]),
                 count=max_results,
+                include_unsplash=include_unsplash,
+                include_cc=include_cc,
+                include_laion=include_laion,
             )
         )
     else:
         results = unwrap_response(
             backend.find_with_text(
-                dataset=dataset_name,
                 query=text_query,
                 count=max_results,
                 rerank=rerank,
+                include_unsplash=include_unsplash,
+                include_cc=include_cc,
+                include_laion=include_laion,
             )
         )
 
@@ -216,24 +247,24 @@ st.success(
     icon="✅",
 )
 
-st.markdown(
-    """
-    This page serves as a proof-of-concept for constructing a multi-lingual, multi-modal Semantic Search system with just 50 lines of Python code.
-    The content is encoded using the {uform} multi-modal transformer model, which produces embeddings in a shared vector space for text queries and visual content.
-    These embeddings are then indexed and queried via the {usearch} vector search engine.
-    For client-server interaction, the stack utilizes {ucall} for remote procedure calls.
-    Each component in this architecture is optimized for high throughput, making it scalable for large datasets.
-    After the initial retrieval, results can be further refined using larger neural network models before being presented to the end-user.
-    """.format(
-        uform="[![UForm stars](https://img.shields.io/github/stars/unum-cloud/uform?style=social&label=UForm)](https://github.com/unum-cloud/uform)",
-        usearch="[![USearch stars](https://img.shields.io/github/stars/unum-cloud/usearch?style=social&label=USearch)](https://github.com/unum-cloud/usearch)",
-        ucall="[![UCall stars](https://img.shields.io/github/stars/unum-cloud/ucall?style=social&label=UCall)](https://github.com/unum-cloud/ucall)",
-    )
-)
-
 for match_idx, match in enumerate(results[: columns * max_rows]):
     col_idx = match_idx % columns
     if col_idx == 0:
         cols = st.columns(columns, gap="small")
     with cols[col_idx]:
         st.image(match, use_column_width="always")
+
+st.markdown(
+    """
+    > This page serves as a proof-of-concept for constructing a multi-lingual, multi-modal Semantic Search system with just 50 lines of Python code.
+    > The content is encoded using the {uform} multi-modal transformer model, which produces embeddings in a shared vector space for text queries and visual content.
+    > These embeddings are then indexed and queried via the {usearch} vector search engine.
+    > For client-server interaction, the stack utilizes {ucall} for remote procedure calls.
+    > Each component in this architecture is optimized for high throughput, making it scalable for large datasets.
+    > After the initial retrieval, results can be further refined using larger neural network models before being presented to the end-user.
+    """.format(
+        uform=badge_uform,
+        usearch=badge_usearch,
+        ucall=badge_ucall,
+    )
+)

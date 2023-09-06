@@ -26,15 +26,6 @@
         "मूंगों में छिपी क्लाउनफ़िश",
         "पानी के करीब उड़ते पक्षी"
     ],
-    "🇩🇪": [
-        "exotische Früchte in kräftigen Farben",
-        "Leuchtreklamen an einer Tankstelle",
-        "ein Mädchen, das allein im Wald wandert",
-        "Camping in einer Wüste unter den Sternen",
-        "Proteste gegen die globale Erwärmung",
-        "Clownfische verstecken sich in Korallen",
-        "Vögel fliegen in der Nähe des Wassers"
-    ],
     "🇦🇲": [
         "էկզոտիկ մրգեր թափանցիկ գույներով",
         "նեոնային ցուցանակներ բենզալցակայանում",
@@ -44,6 +35,15 @@
         "ծաղրածու ձուկ թաքնված մարջաններում",
         "թռչուններ, որոնք թռչում են ջրի մոտ"
     ],
+    "🇰🇷": [
+        "강렬한 색상의 이국적인 과일",
+        "주유소의 네온사인",
+        "숲에서 혼자 방황하는 소녀",
+        "별빛 아래 사막에서 캠핑",
+        "지구 온난화 시위",
+        "산호에 숨어있는 흰 동가리",
+        "물 가까이 날아가는 새들"
+    ],
     "🇫🇷": [
         "fruits exotiques aux couleurs acidulées",
         "enseignes au néon dans une station-service",
@@ -52,6 +52,15 @@
         "manifestations contre le réchauffement climatique",
         "poisson-clown caché dans les coraux",
         "oiseaux volant près de l'eau"
+    ],
+    "🇩🇪": [
+        "exotische Früchte in kräftigen Farben",
+        "Leuchtreklamen an einer Tankstelle",
+        "ein Mädchen, das allein im Wald wandert",
+        "Camping in einer Wüste unter den Sternen",
+        "Proteste gegen die globale Erwärmung",
+        "Clownfische verstecken sich in Korallen",
+        "Vögel fliegen in der Nähe des Wassers"
     ],
     "🇪🇸": [
         "frutas exóticas en colores llamativos",
@@ -169,14 +178,5 @@
         "protes pemanasan global",
         "ikan badut bersembunyi di karang",
         "burung terbang dekat dengan air"
-    ],
-    "🇰🇷": [
-        "강렬한 색상의 이국적인 과일",
-        "주유소의 네온사인",
-        "숲에서 혼자 방황하는 소녀",
-        "별빛 아래 사막에서 캠핑",
-        "지구 온난화 시위",
-        "산호에 숨어있는 흰 동가리",
-        "물 가까이 날아가는 새들"
     ]
 }
