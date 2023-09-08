@@ -202,15 +202,18 @@ def find_with_text(
     if rerank:
         reranked = []
         for uri in uris:
-            data: str = re.sub("^data:image/.+;base64,", "", uri)
-            image = Image.open(io.BytesIO(base64.b64decode(data)))
-            image_data = _model.preprocess_image(image)
-            joint_embeddings = _model.encode_multimodal(
-                image=image_data,
-                text=text_data,
-            )
-            score = float(_model.get_matching_scores(joint_embeddings))
-            reranked.append((uri, score))
+            try:
+                data: str = re.sub("^data:image/.+;base64,", "", uri)
+                image = Image.open(io.BytesIO(base64.b64decode(data)))
+                image_data = _model.preprocess_image(image)
+                joint_embeddings = _model.encode_multimodal(
+                    image=image_data,
+                    text=text_data,
+                )
+                score = float(_model.get_matching_scores(joint_embeddings))
+                reranked.append((uri, score))
+            except:
+                pass
 
         reranked = sorted(reranked, reverse=True, key=lambda x: x[1])
         uris = [uri for uri, _ in reranked]
